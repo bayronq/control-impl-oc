@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Instalaciones</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Control de Instalaciones</h1>
+      <button id="btn-reportes" class="btn btn-secondary">Ver Reportes</button>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="instalaciones">Instalaciones</button>
+      <button class="tab-btn" data-tab="encargados">Mantener Encargados</button>
+      <button class="tab-btn" data-tab="tipos">Mantener Tipos</button>
+    </div>
+
+    <div id="tab-instalaciones" class="tab-content active">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Mes:</label>
+          <select id="filter-mes">
+            <option value="01">Enero</option>
+            <option value="02">Febrero</option>
+            <option value="03">Marzo</option>
+            <option value="04">Abril</option>
+            <option value="05">Mayo</option>
+            <option value="06">Junio</option>
+            <option value="07">Julio</option>
+            <option value="08">Agosto</option>
+            <option value="09">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Año:</label>
+          <select id="filter-anio"></select>
+        </div>
+        <button id="btn-filtrar" class="btn btn-primary">Filtrar</button>
+        <button id="btn-todos" class="btn btn-secondary">Ver Todos</button>
+      </div>
+
+      <div class="actions">
+        <button id="btn-nueva" class="btn btn-primary">+ Nueva Instalación</button>
+      </div>
+
+      <div class="table-container">
+        <table id="tabla-instalaciones">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Encargado</th>
+              <th>Caso</th>
+              <th>Tipo</th>
+              <th>Ambiente</th>
+              <th>Pipeline</th>
+              <th>Herramienta</th>
+              <th>Observaciones</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-encargados" class="tab-content">
+      <div class="actions">
+        <button id="btn-nuevo-encargado" class="btn btn-primary">+ Nuevo Encargado</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-encargados"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-tipos" class="tab-content">
+      <div class="actions">
+        <button id="btn-nuevo-tipo" class="btn btn-primary">+ Nuevo Tipo</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-tipos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-form" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="modal-title">Nueva Instalación</h2>
+      <form id="form-instalacion">
+        <input type="hidden" id="id-instalacion">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Encargado *</label>
+            <select id="encargado" required></select>
+          </div>
+          <div class="form-group">
+            <label>Fecha *</label>
+            <input type="date" id="fecha" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Caso Asociado</label>
+            <input type="text" id="caso_asociado">
+          </div>
+          <div class="form-group">
+            <label>Tipo de Instalación *</label>
+            <select id="tipo_instalacion" required></select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ambiente *</label>
+            <select id="ambiente" required>
+              <option value="">Seleccionar...</option>
+              <option value="produccion">Producción</option>
+              <option value="qa">QA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>¿Usa Pipeline?</label>
+            <select id="usa_pipeline">
+              <option value="0">No</option>
+              <option value="1">Sí</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row" id="pipeline-group" style="display: none;">
+          <div class="form-group">
+            <label>Herramienta de Pipeline</label>
+            <select id="herramienta_pipeline">
+              <option value="">Seleccionar...</option>
+              <option value="gitlab">GitLab</option>
+              <option value="jenkins">Jenkins</option>
+              <option value="azure_devops">Azure DevOps</option>
+              <option value="github_actions">GitHub Actions</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group full-width">
+          <label>Observaciones</label>
+          <textarea id="observaciones" rows="3"></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-encargado" class="modal">
+    <div class="modal-content">
+      <span class="close-encargado close">&times;</span>
+      <h2 id="modal-title-encargado">Nuevo Encargado</h2>
+      <form id="form-encargado">
+        <input type="hidden" id="id-encargado">
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input type="text" id="nombre-encargado" required>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-encargado">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-tipo" class="modal">
+    <div class="modal-content">
+      <span class="close-tipo close">&times;</span>
+      <h2 id="modal-title-tipo">Nuevo Tipo de Instalación</h2>
+      <form id="form-tipo">
+        <input type="hidden" id="id-tipo">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre (código) *</label>
+            <input type="text" id="nombre-tipo" required placeholder="ej: servicio_web">
+          </div>
+          <div class="form-group">
+            <label>Descripción *</label>
+            <input type="text" id="descripcion-tipo" required placeholder="ej: Servicio Web">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-tipo">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-reportes" class="modal">
+    <div class="modal-content modal-large">
+      <span class="close-reportes close">&times;</span>
+      <h2>Reportes Mensuales</h2>
+      
+      <div class="report-filters">
+        <div class="filter-group">
+          <label>Mes:</label>
+          <select id="reporte-mes"></select>
+        </div>
+        <div class="filter-group">
+          <label>Año:</label>
+          <select id="reporte-anio"></select>
+        </div>
+        <button id="btn-generar-reporte" class="btn btn-primary">Generar Reporte</button>
+      </div>
+      
+      <div id="reporte-resumen" class="reporte-section">
+        <h3>Resumen del Mes</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Total Instalaciones</div>
+          </div>
+          <div class="stat-card production">
+            <div class="stat-value" id="stat-produccion">0</div>
+            <div class="stat-label">Producción</div>
+          </div>
+          <div class="stat-card qa">
+            <div class="stat-value" id="stat-qa">0</div>
+            <div class="stat-label">QA</div>
+          </div>
+          <div class="stat-card pipeline">
+            <div class="stat-value" id="stat-con-pipeline">0</div>
+            <div class="stat-label">Con Pipeline</div>
+          </div>
+          <div class="stat-card manual">
+            <div class="stat-value" id="stat-sin-pipeline">0</div>
+            <div class="stat-label">Sin Pipeline</div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="reporte-encargados" class="reporte-section">
+        <h3>Instalaciones por Encargado</h3>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Encargado</th>
+              <th>Total</th>
+              <th>Producción</th>
+              <th>QA</th>
+            </tr>
+          </thead>
+          <tbody id="reporte-encargados-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
