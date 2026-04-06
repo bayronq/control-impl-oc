@@ -8,7 +8,7 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .ENV
+      - .env
     volumes:
       - ./public:/app/public:ro
       - ./views:/app/views:ro
@@ -20,9 +20,9 @@ services:
     image: postgres:15-alpine
     container_name: postgres-instalaciones
     env_file:
-      - .ENV
+      - .env
     volumes:
-      - /work/volumes/control-impl-oc-data:/var/lib/postgresql/data
+      - ${VOL:-./}/control-impl-oc-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-instalaciones}"]
       interval: 5s
