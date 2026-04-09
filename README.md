@@ -4,7 +4,7 @@ Sistema web para el control y seguimiento de instalaciones y despliegues de soft
 
 ## Características
 
-- **Autenticación LDAP**: Login con usuarios del dominio `gfbanrural.local`
+- **Autenticación LDAP**: Login con usuarios del dominio `tudominio.local`
 - **Gestión de Estados**: Estados personalizables (Pendiente, En Curso, Finalizado, etc.)
 - **Caso Asociado**: Campo obligatorio con enlace directo a ServiceNow
 - **Logging**: Registro de todas las acciones en Loki
@@ -28,7 +28,7 @@ cp .env.example .env
 
 # 3. Editar .env con las credenciales correctas
 # - DB_PASSWORD: Contraseña de PostgreSQL
-# - LDAP_URL: URL del servidor LDAP (dc.gfbanrural.local)
+# - LDAP_URL: URL del servidor LDAP (dc.tudominio.local)
 # - SESSION_SECRET: Clave secreta para sesiones
 
 # 4. Iniciar los contenedores
@@ -58,8 +58,8 @@ DB_USER=admin
 DB_PASSWORD=your_password
 
 # LDAP (Autenticación de dominio)
-LDAP_URL=ldap://dc.<tu>.<dominio>:389
-LDAP_BASE_DN=dc=gfbanrural,dc=local
+LDAP_URL=ldap://dc.<tudominio>.<local>:389
+LDAP_BASE_DN=dc=tudominio,dc=local
 
 # ServiceNow
 SERVICENOW_URL=https://<urlmesadeservicio>/ui/changes
