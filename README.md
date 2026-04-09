@@ -58,11 +58,11 @@ DB_USER=admin
 DB_PASSWORD=your_password
 
 # LDAP (Autenticación de dominio)
-LDAP_URL=ldap://dc.gfbanrural.local:389
+LDAP_URL=ldap://dc.<tu>.<dominio>:389
 LDAP_BASE_DN=dc=gfbanrural,dc=local
 
 # ServiceNow
-SERVICENOW_URL=https://mesadeservicio.banrural.com.gt/ui/changes
+SERVICENOW_URL=https://<urlmesadeservicio>/ui/changes
 
 # Loki (Logging)
 LOKI_URL=http://loki:3100/loki/api/v1/push
