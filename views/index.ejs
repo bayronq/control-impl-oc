@@ -10,20 +10,35 @@
   <div class="container">
     <header>
       <h1>Control de Instalaciones</h1>
-      <button id="btn-reportes" class="btn btn-secondary">Ver Reportes</button>
+      <div class="header-actions">
+        <span class="user-info">Bienvenido, <strong id="user-name">Usuario</strong></span>
+        <button id="btn-reportes" class="btn btn-secondary">Ver Reportes</button>
+        <a href="/logout" class="btn btn-secondary">Cerrar Sesión</a>
+      </div>
     </header>
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="instalaciones">Instalaciones</button>
       <button class="tab-btn" data-tab="encargados">Mantener Encargados</button>
       <button class="tab-btn" data-tab="tipos">Mantener Tipos</button>
+      <button class="tab-btn" data-tab="estados">Mantener Estados</button>
     </div>
 
     <div id="tab-instalaciones" class="tab-content active">
       <div class="filters">
         <div class="filter-group">
+          <label>Día:</label>
+          <select id="filter-dia">
+            <option value="">Día</option>
+            <% for(let i=1; i<=31; i++) { %>
+              <option value="<%= i.toString().padStart(2, '0') %>"><%= i %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="filter-group">
           <label>Mes:</label>
           <select id="filter-mes">
+            <option value="">Mes</option>
             <option value="01">Enero</option>
             <option value="02">Febrero</option>
             <option value="03">Marzo</option>
@@ -42,6 +57,26 @@
           <label>Año:</label>
           <select id="filter-anio"></select>
         </div>
+        <div class="filter-group">
+          <label>Encargado:</label>
+          <select id="filter-encargado">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Ambiente:</label>
+          <select id="filter-ambiente">
+            <option value="">Todos</option>
+            <option value="produccion">Producción</option>
+            <option value="qa">QA</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Estado:</label>
+          <select id="filter-estado">
+            <option value="">Todos</option>
+          </select>
+        </div>
         <button id="btn-filtrar" class="btn btn-primary">Filtrar</button>
         <button id="btn-todos" class="btn btn-secondary">Ver Todos</button>
       </div>
@@ -59,6 +94,7 @@
               <th>Caso</th>
               <th>Tipo</th>
               <th>Ambiente</th>
+              <th>Estado</th>
               <th>Pipeline</th>
               <th>Herramienta</th>
               <th>Observaciones</th>
@@ -106,6 +142,26 @@
         </table>
       </div>
     </div>
+
+    <div id="tab-estados" class="tab-content">
+      <div class="actions">
+        <button id="btn-nuevo-estado" class="btn btn-primary">+ Nuevo Estado</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Color</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-estados"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div id="modal-form" class="modal">
@@ -128,16 +184,20 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label>Caso Asociado</label>
-            <input type="text" id="caso_asociado">
+            <label>Caso Asociado *</label>
+            <input type="text" id="caso_asociado" required placeholder="Número de caso">
           </div>
           <div class="form-group">
             <label>Tipo de Instalación *</label>
             <select id="tipo_instalacion" required></select>
           </div>
         </div>
-        
+
         <div class="form-row">
+          <div class="form-group">
+            <label>Estado *</label>
+            <select id="estado" required></select>
+          </div>
           <div class="form-group">
             <label>Ambiente *</label>
             <select id="ambiente" required>
@@ -146,6 +206,9 @@
               <option value="qa">QA</option>
             </select>
           </div>
+        </div>
+        
+        <div class="form-row">
           <div class="form-group">
             <label>¿Usa Pipeline?</label>
             <select id="usa_pipeline">
@@ -219,6 +282,36 @@
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Guardar</button>
           <button type="button" class="btn btn-secondary" id="btn-cancelar-tipo">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-estado" class="modal">
+    <div class="modal-content">
+      <span class="close-estado close">&times;</span>
+      <h2 id="modal-title-estado">Nuevo Estado</h2>
+      <form id="form-estado">
+        <input type="hidden" id="id-estado">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre (código) *</label>
+            <input type="text" id="nombre-estado" required placeholder="ej: pendiente">
+          </div>
+          <div class="form-group">
+            <label>Descripción *</label>
+            <input type="text" id="descripcion-estado" required placeholder="ej: Pendiente">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="color-estado" value="#6c757d">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-estado">Cancelar</button>
         </div>
       </form>
     </div>

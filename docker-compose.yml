@@ -9,6 +9,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
     volumes:
       - ./public:/app/public:ro
       - ./views:/app/views:ro
@@ -28,6 +30,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki-instalaciones
+    ports:
+      - "3100:3100"
+    volumes:
+      - ${VOL:-./}/loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
     restart: unless-stopped
     networks:
       - app-network

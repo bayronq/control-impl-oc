@@ -433,6 +433,40 @@ tbody tr:hover {
   display: block;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.user-info strong {
+  color: #2c3e50;
+}
+
+.caso-link {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.caso-link:hover {
+  text-decoration: underline;
+}
+
+.estado-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  display: inline-block;
+}
+
 @media (max-width: 768px) {
   .filters {
     flex-wrap: wrap;
