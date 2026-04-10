@@ -35,10 +35,22 @@ try {
   console.log('LdapAuth no disponible, usando autenticación local');
 }
 
-async function saveLog(action, details, user) {
+function ensureLogDir() {
   try {
     if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
+      fs.mkdirSync(LOGS_DIR, { recursive: true, mode: 0o777 });
+      console.log(`Directorio de logs creado: ${LOGS_DIR}`);
+    }
+  } catch (err) {
+    console.warn('No se pudo crear directorio de logs:', err.message);
+  }
+}
+
+async function saveLog(action, details, user) {
+  try {
+    const logDir = LOGS_DIR;
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true, mode: 0o777 });
     }
     
     const logEntry = {
@@ -49,7 +61,7 @@ async function saveLog(action, details, user) {
       details: details
     };
 
-    const logFile = path.join(LOGS_DIR, `logs-${new Date().toISOString().split('T')[0]}.jsonl`);
+    const logFile = path.join(logDir, `logs-${new Date().toISOString().split('T')[0]}.jsonl`);
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
   } catch (err) {
     console.warn('No se pudo guardar log:', err.message);
@@ -585,6 +597,7 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
+    ensureLogDir();
     await waitForDatabase();
     await initializeDatabase();
     
