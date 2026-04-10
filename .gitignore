@@ -4,3 +4,4 @@ server.log
 *.db
 *.log
 logs/
+control-impl-oc-data
