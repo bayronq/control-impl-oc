@@ -14,6 +14,7 @@
     "docker:clean": "docker-compose down -v"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "connect-pg-simple": "^10.0.0",
     "ejs": "^3.1.9",
     "express": "^4.18.2",

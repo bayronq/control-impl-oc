@@ -5,6 +5,7 @@ const fs = require('fs');
 const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
 const pgSession = require('connect-pg-simple')(session);
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -72,9 +73,23 @@ async function initializeDatabase() {
   const client = await pool.connect();
   try {
     await client.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        nombre TEXT NOT NULL,
+        apellido TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        activo BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS encargados (
         id SERIAL PRIMARY KEY,
-        nombre TEXT NOT NULL UNIQUE,
+        usuario_id INTEGER REFERENCES usuarios(id) UNIQUE,
+        nombre TEXT NOT NULL,
         activo BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -117,14 +132,6 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    const { rows: countEncargados } = await client.query('SELECT COUNT(*) as count FROM encargados');
-    if (parseInt(countEncargados[0].count) === 0) {
-      const insertEncargado = 'INSERT INTO encargados (nombre) VALUES ($1)';
-      ['Administrador', 'Desarrollador', 'Técnico'].forEach(async (nombre) => {
-        await client.query(insertEncargado, [nombre]);
-      });
-    }
 
     const { rows: countTipos } = await client.query('SELECT COUNT(*) as count FROM tipos_instalacion');
     if (parseInt(countTipos[0].count) === 0) {
@@ -212,7 +219,55 @@ function getServiceNowUrl(casoId) {
 }
 
 app.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  const registered = req.query.registered === 'true';
+  res.render('login', { error: null, registered });
+});
+
+app.get('/register', (req, res) => {
+  res.render('register', { error: null });
+});
+
+app.post('/register', async (req, res) => {
+  const { username, nombre, apellido, email, password, confirmPassword } = req.body;
+
+  if (!username || !nombre || !apellido || !email || !password) {
+    return res.render('register', { error: 'Todos los campos son requeridos' });
+  }
+
+  if (password !== confirmPassword) {
+    return res.render('register', { error: 'Las contraseñas no coinciden' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      `INSERT INTO usuarios (username, nombre, apellido, email, password) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [username, nombre, apellido, email, hashedPassword]
+    );
+
+    const fullName = `${nombre} ${apellido}`;
+    await pool.query(
+      'INSERT INTO encargados (usuario_id, nombre) VALUES ($1, $2)',
+      [result.rows[0].id, fullName]
+    );
+
+    await saveLog('registro_usuario', { username, email }, username);
+
+    res.redirect('/login?registered=true');
+  } catch (err) {
+    console.error('Error registrando usuario:', err.message);
+    if (err.code === '23505') {
+      if (err.constraint.includes('username')) {
+        return res.render('register', { error: 'El nombre de usuario ya existe' });
+      }
+      if (err.constraint.includes('email')) {
+        return res.render('register', { error: 'El correo electrónico ya está registrado' });
+      }
+    }
+    res.render('register', { error: 'Error al registrar usuario' });
+  }
 });
 
 app.post('/login', async (req, res) => {
@@ -224,6 +279,7 @@ app.post('/login', async (req, res) => {
 
   try {
     let userValid = false;
+    let userData = null;
 
     if (ENABLE_DOMAIN_LOGIN && LdapAuth) {
       const ldap = new LdapAuth({
@@ -243,13 +299,26 @@ app.post('/login', async (req, res) => {
       });
       userValid = true;
     } else {
-      userValid = username && password && username.length > 0;
+      const result = await pool.query(
+        'SELECT id, username, nombre, apellido FROM usuarios WHERE username = $1 AND activo = true',
+        [username]
+      );
+      
+      if (result.rows.length > 0) {
+        const user = result.rows[0];
+        const passwordMatch = await bcrypt.compare(password, (await pool.query('SELECT password FROM usuarios WHERE id = $1', [user.id])).rows[0].password);
+        
+        if (passwordMatch) {
+          userValid = true;
+          userData = user;
+        }
+      }
     }
 
     if (userValid) {
       req.session.user = {
-        username: username,
-        displayName: username
+        username: userData ? userData.username : username,
+        displayName: userData ? `${userData.nombre} ${userData.apellido}` : username
       };
       await saveLog('login', { username }, username);
       return res.redirect('/');
