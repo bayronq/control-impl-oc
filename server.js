@@ -21,6 +21,7 @@ const pool = new Pool({
 });
 
 const LOGS_DIR = process.env.LOGS_DIR || '/logs';
+const ENABLE_DOMAIN_LOGIN = process.env.ENABLE_DOMAIN_LOGIN === 'true';
 const SERVICENOW_URL = process.env.SERVICENOW_URL || 'https://mesadeservicio.banrural.com.gt/ui/changes';
 const LDAP_URL = process.env.LDAP_URL || 'ldap://dc.gfbanrural.local:389';
 const LDAP_BASE_DN = process.env.LDAP_BASE_DN || 'dc=gfbanrural,dc=local';
@@ -216,7 +217,7 @@ app.post('/login', async (req, res) => {
   try {
     let userValid = false;
 
-    if (LdapAuth) {
+    if (ENABLE_DOMAIN_LOGIN && LdapAuth) {
       const ldap = new LdapAuth({
         url: LDAP_URL,
         baseDN: LDAP_BASE_DN,
