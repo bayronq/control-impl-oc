@@ -35,16 +35,12 @@ try {
   console.log('LdapAuth no disponible, usando autenticación local');
 }
 
-if (!fs.existsSync(LOGS_DIR)) {
-  try {
-    fs.mkdirSync(LOGS_DIR, { recursive: true });
-  } catch (err) {
-    console.error('No se pudo crear el directorio de logs:', err.message);
-  }
-}
-
 async function saveLog(action, details, user) {
   try {
+    if (!fs.existsSync(LOGS_DIR)) {
+      fs.mkdirSync(LOGS_DIR, { recursive: true });
+    }
+    
     const logEntry = {
       timestamp: new Date().toISOString(),
       app: 'control-instalaciones',
@@ -56,7 +52,7 @@ async function saveLog(action, details, user) {
     const logFile = path.join(LOGS_DIR, `logs-${new Date().toISOString().split('T')[0]}.jsonl`);
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
   } catch (err) {
-    console.error('Error guardando log:', err.message);
+    console.warn('No se pudo guardar log:', err.message);
   }
 }
 
