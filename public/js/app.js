@@ -325,7 +325,10 @@ async function openModal(data = null) {
     }
   } else {
     title.textContent = 'Nueva Instalación';
-    document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    const hoy = new Date();
+    document.getElementById('fecha').value = hoy.getFullYear() + '-' + 
+      String(hoy.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(hoy.getDate()).padStart(2, '0');
     document.getElementById('estado').value = 'pendiente';
   }
 
