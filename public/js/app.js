@@ -405,6 +405,10 @@ async function loadEncargados() {
     const response = await fetch('/api/encargados');
     const data = await response.json();
     renderEncargadosTable(data);
+    
+    const filterEncargadoSelect = document.getElementById('filter-encargado');
+    filterEncargadoSelect.innerHTML = '<option value="">Todos</option>' +
+      data.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('');
   } catch (error) {
     console.error('Error cargando encargados:', error);
   }
