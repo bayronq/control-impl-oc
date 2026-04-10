@@ -1,4 +1,4 @@
-let currentFilters = { mes: null, anio: null, encargado: null, dia: null, ambiente: null, estado: null };
+let currentFilters = { mes: null, anio: null, encargado: null, dia: null, ambiente: null, estado: null, vista: 'dia' };
 let estadosCache = [];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,9 +35,35 @@ function initializeFilters() {
   reporteMes.value = currentMonth;
   reporteAnio.innerHTML = anioSelect.innerHTML;
 
-  currentFilters.dia = currentDay;
+  applyVista('dia');
+}
+
+function applyVista(vista) {
+  const currentDate = new Date();
+  const currentDay = String(currentDate.getDate()).padStart(2, '0');
+  const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const currentYear = currentDate.getFullYear();
+
+  currentFilters.vista = vista;
   currentFilters.mes = currentMonth;
   currentFilters.anio = currentYear;
+
+  if (vista === 'dia') {
+    currentFilters.dia = currentDay;
+    document.getElementById('filter-dia').value = currentDay;
+  } else if (vista === 'mes') {
+    currentFilters.dia = null;
+    document.getElementById('filter-dia').value = '';
+  } else {
+    currentFilters.dia = null;
+    currentFilters.mes = null;
+    currentFilters.anio = null;
+    document.getElementById('filter-dia').value = '';
+    document.getElementById('filter-mes').value = '';
+    document.getElementById('filter-anio').value = '';
+  }
+
+  loadInstalaciones();
 }
 
 function setupEventListeners() {
@@ -50,22 +76,22 @@ function setupEventListeners() {
     });
   });
 
-  document.getElementById('btn-filtrar').addEventListener('click', () => {
-    currentFilters.mes = document.getElementById('filter-mes').value;
-    currentFilters.anio = document.getElementById('filter-anio').value;
+  document.getElementById('filter-vista').addEventListener('change', (e) => {
+    applyVista(e.target.value);
+  });
+
+  document.getElementById('filter-encargado').addEventListener('change', () => {
     currentFilters.encargado = document.getElementById('filter-encargado').value;
-    currentFilters.dia = document.getElementById('filter-dia').value;
-    currentFilters.ambiente = document.getElementById('filter-ambiente').value;
-    currentFilters.estado = document.getElementById('filter-estado').value;
     loadInstalaciones();
   });
 
-  document.getElementById('btn-todos').addEventListener('click', () => {
-    currentFilters = { mes: null, anio: null, encargado: null, dia: null, ambiente: null, estado: null };
-    document.getElementById('filter-encargado').value = '';
-    document.getElementById('filter-dia').value = '';
-    document.getElementById('filter-ambiente').value = '';
-    document.getElementById('filter-estado').value = '';
+  document.getElementById('filter-ambiente').addEventListener('change', () => {
+    currentFilters.ambiente = document.getElementById('filter-ambiente').value;
+    loadInstalaciones();
+  });
+
+  document.getElementById('filter-estado').addEventListener('change', () => {
+    currentFilters.estado = document.getElementById('filter-estado').value;
     loadInstalaciones();
   });
 
