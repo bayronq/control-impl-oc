@@ -745,6 +745,7 @@ async function exportReportPDF() {
     const resumen = await resumenRes.json();
     const encargados = await encargadosRes.json();
 
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     doc.setFontSize(18);
