@@ -9,11 +9,10 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    environment:
-      - LOKI_URL=${LOKI_URL}
     volumes:
       - ./public:/app/public:ro
       - ./views:/app/views:ro
+      - ${VOL:-./}/control-impl-oc-data/logs:/logs
     restart: unless-stopped
     networks:
       - app-network

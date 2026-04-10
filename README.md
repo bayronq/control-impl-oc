@@ -4,10 +4,10 @@ Sistema web para el control y seguimiento de instalaciones y despliegues de soft
 
 ## Características
 
-- **Autenticación LDAP**: Login con usuarios del dominio `tudominio.local`
+- **Autenticación**: Login con usuarios locales o de dominio LDAP (configurable)
 - **Gestión de Estados**: Estados personalizables (Pendiente, En Curso, Finalizado, etc.)
 - **Caso Asociado**: Campo obligatorio con enlace directo a ServiceNow
-- **Logging**: Registro de todas las acciones en Loki
+- **Logging**: Registro de todas las acciones en archivos JSON locales
 - **Filtros Avanzados**: Por mes, año, encargado, día, ambiente y estado
 - **Reportes**: Estadísticas mensuales y por encargado
 
@@ -56,24 +56,42 @@ DB_PORT=5432
 DB_NAME=instalaciones
 DB_USER=admin
 DB_PASSWORD=your_password
+DB_SSL=false
+
+# PostgreSQL
+POSTGRES_DB=instalaciones
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=your_password
 
 # LDAP (Autenticación de dominio)
-LDAP_URL=ldap://dc.<tudominio>.<local>:389
+ENABLE_DOMAIN_LOGIN=true
+LDAP_URL=ldap://dc.tudominio.local:389
 LDAP_BASE_DN=dc=tudominio,dc=local
+LDAP_BIND_DN=
+LDAP_BIND_PASSWORD=
 
 # ServiceNow
-SERVICENOW_URL=https://<urlmesadeservicio>/ui/changes
+SERVICENOW_URL=https://urlmesadeservicio/ui/changes
 
-# Loki (Logging)
-LOKI_URL=http://loki:3100/loki/api/v1/push
+# Logging
+LOGS_DIR=/logs
 ```
+
+### Variables de LDAP
+
+| Variable | Descripción | Valor ejemplo |
+|----------|-------------|---------------|
+| ENABLE_DOMAIN_LOGIN | Habilitar autenticación por dominio LDAP | `true` o `false` |
+| LDAP_URL | URL del servidor LDAP | `ldap://dc.dominio.local:389` |
+| LDAP_BASE_DN | DN base para búsquedas | `dc=dominio,dc=local` |
+| LDAP_BIND_DN | DN del usuario bind (opcional) | `cn=admin,dc=dominio,dc=local` |
+| LDAP_BIND_PASSWORD | Contraseña del usuario bind (opcional) | - |
 
 ## Persistencia de Datos
 
-Los datos se persistén en:
+Los datos se persisten en:
 ```
-/work/volumes/control-impl-oc-data      # PostgreSQL
-/work/volumes/loki-data                 # Loki
+/work/volumes/control-impl-oc-data      # PostgreSQL y Logs
 ```
 
 ## Scripts npm
@@ -96,14 +114,11 @@ docker compose ps
 # Ver logs de la app
 docker compose logs -f app
 
-# Ver logs de Loki
-docker compose logs -f loki
+# Ver logs de la aplicación en el主机
+cat control-impl-oc-data/logs/logs-YYYY-MM-DD.jsonl
 
 # Acceder a PostgreSQL
 docker exec -it postgres-instalaciones psql -U admin -d instalaciones
-
-# Acceder a Loki (Dashboards)
-# http://localhost:3100
 
 # Reiniciar servicios
 docker compose restart
@@ -142,6 +157,7 @@ docker compose up --build -d
 - `encargados` - Personas responsables de instalaciones
 - `tipos_instalacion` - Tipos de instalaciones (API, servicio web, etc.)
 - `estados` - Estados de instalaciones
+- `session` - Almacenamiento de sesiones de usuarios (creada automáticamente)
 - `instalaciones` - Registro de instalaciones realizadas
 
 ### Estados Predefinidos
@@ -217,4 +233,4 @@ npm start
 - **NO** subir el archivo `.env` al repositorio
 - Usar contraseñas seguras en producción
 - Mantener `node_modules/` fuera del repositorio
-- Todas las acciones se registran en Loki para auditoría
+- Todas las acciones se registran en archivos de log para auditoría

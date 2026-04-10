@@ -1,8 +1,10 @@
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
+const fs = require('fs');
 const session = require('express-session');
 const { v4: uuidv4 } = require('uuid');
+const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
 
@@ -18,7 +20,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
-const LOKI_URL = process.env.LOKI_URL || 'http://loki:3100/loki/api/v1/push';
+const LOGS_DIR = process.env.LOGS_DIR || '/logs';
 const SERVICENOW_URL = process.env.SERVICENOW_URL || 'https://mesadeservicio.banrural.com.gt/ui/changes';
 const LDAP_URL = process.env.LDAP_URL || 'ldap://dc.gfbanrural.local:389';
 const LDAP_BASE_DN = process.env.LDAP_BASE_DN || 'dc=gfbanrural,dc=local';
@@ -32,26 +34,28 @@ try {
   console.log('LdapAuth no disponible, usando autenticación local');
 }
 
-async function sendToLoki(action, details, user) {
+if (!fs.existsSync(LOGS_DIR)) {
+  try {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+  } catch (err) {
+    console.error('No se pudo crear el directorio de logs:', err.message);
+  }
+}
+
+async function saveLog(action, details, user) {
   try {
     const logEntry = {
-      streams: [{
-        stream: {
-          app: 'control-instalaciones',
-          action: action,
-          user: user || 'system'
-        },
-        values: [[String(Date.now() * 1000000), JSON.stringify(details)]]
-      }]
+      timestamp: new Date().toISOString(),
+      app: 'control-instalaciones',
+      action: action,
+      user: user || 'system',
+      details: details
     };
 
-    await fetch(LOKI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(logEntry)
-    });
+    const logFile = path.join(LOGS_DIR, `logs-${new Date().toISOString().split('T')[0]}.jsonl`);
+    fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
   } catch (err) {
-    console.error('Error enviando log a Loki:', err.message);
+    console.error('Error guardando log:', err.message);
   }
 }
 
@@ -173,6 +177,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
+  store: new pgSession({
+    pool: pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || uuidv4(),
   resave: false,
   saveUninitialized: false,
@@ -233,7 +242,7 @@ app.post('/login', async (req, res) => {
         username: username,
         displayName: username
       };
-      await sendToLoki('login', { username }, username);
+      await saveLog('login', { username }, username);
       return res.redirect('/');
     }
   } catch (err) {
@@ -249,7 +258,7 @@ app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
   if (username) {
-    sendToLoki('logout', { username }, username);
+    saveLog('logout', { username }, username);
   }
 });
 
@@ -276,7 +285,7 @@ app.post('/api/encargados', async (req, res) => {
       'INSERT INTO encargados (nombre) VALUES ($1) RETURNING id, nombre, activo',
       [nombre]
     );
-    await sendToLoki('crear_encargado', { id: result.rows[0].id, nombre }, user);
+    await saveLog('crear_encargado', { id: result.rows[0].id, nombre }, user);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -291,7 +300,7 @@ app.put('/api/encargados/:id', async (req, res) => {
   const user = req.session.user?.username || 'unknown';
   try {
     await pool.query('UPDATE encargados SET nombre = $1 WHERE id = $2', [nombre, req.params.id]);
-    await sendToLoki('editar_encargado', { id: req.params.id, nombre }, user);
+    await saveLog('editar_encargado', { id: req.params.id, nombre }, user);
     res.json({ id: req.params.id, nombre });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -302,7 +311,7 @@ app.delete('/api/encargados/:id', async (req, res) => {
   const user = req.session.user?.username || 'unknown';
   try {
     await pool.query('UPDATE encargados SET activo = false WHERE id = $1', [req.params.id]);
-    await sendToLoki('eliminar_encargado', { id: req.params.id }, user);
+    await saveLog('eliminar_encargado', { id: req.params.id }, user);
     res.json({ message: 'Encargado eliminado' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -328,7 +337,7 @@ app.post('/api/tipos-instalacion', async (req, res) => {
       'INSERT INTO tipos_instalacion (nombre, descripcion) VALUES ($1, $2) RETURNING id, nombre, descripcion, activo',
       [nombre, descripcion || nombre]
     );
-    await sendToLoki('crear_tipo', { id: result.rows[0].id, nombre }, user);
+    await saveLog('crear_tipo', { id: result.rows[0].id, nombre }, user);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -346,7 +355,7 @@ app.put('/api/tipos-instalacion/:id', async (req, res) => {
       'UPDATE tipos_instalacion SET nombre = $1, descripcion = $2 WHERE id = $3',
       [nombre, descripcion, req.params.id]
     );
-    await sendToLoki('editar_tipo', { id: req.params.id, nombre }, user);
+    await saveLog('editar_tipo', { id: req.params.id, nombre }, user);
     res.json({ id: req.params.id, nombre, descripcion });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -357,7 +366,7 @@ app.delete('/api/tipos-instalacion/:id', async (req, res) => {
   const user = req.session.user?.username || 'unknown';
   try {
     await pool.query('UPDATE tipos_instalacion SET activo = false WHERE id = $1', [req.params.id]);
-    await sendToLoki('eliminar_tipo', { id: req.params.id }, user);
+    await saveLog('eliminar_tipo', { id: req.params.id }, user);
     res.json({ message: 'Tipo de instalación eliminado' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -383,7 +392,7 @@ app.post('/api/estados', async (req, res) => {
       'INSERT INTO estados (nombre, descripcion, color) VALUES ($1, $2, $3) RETURNING *',
       [nombre, descripcion || nombre, color || '#6c757d']
     );
-    await sendToLoki('crear_estado', { id: result.rows[0].id, nombre }, user);
+    await saveLog('crear_estado', { id: result.rows[0].id, nombre }, user);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -401,7 +410,7 @@ app.put('/api/estados/:id', async (req, res) => {
       'UPDATE estados SET nombre = $1, descripcion = $2, color = $3 WHERE id = $4',
       [nombre, descripcion, color, req.params.id]
     );
-    await sendToLoki('editar_estado', { id: req.params.id, nombre }, user);
+    await saveLog('editar_estado', { id: req.params.id, nombre }, user);
     res.json({ id: req.params.id, nombre, descripcion, color });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -412,7 +421,7 @@ app.delete('/api/estados/:id', async (req, res) => {
   const user = req.session.user?.username || 'unknown';
   try {
     await pool.query('UPDATE estados SET activo = false WHERE id = $1', [req.params.id]);
-    await sendToLoki('eliminar_estado', { id: req.params.id }, user);
+    await saveLog('eliminar_estado', { id: req.params.id }, user);
     res.json({ message: 'Estado eliminado' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -484,7 +493,7 @@ app.post('/api/instalaciones', async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
       [encargado, fecha, caso_asociado, tipo_instalacion, ambiente, usa_pipeline || false, usa_pipeline ? herramienta_pipeline : null, observaciones, estado || 'pendiente']
     );
-    await sendToLoki('crear_instalacion', { id: result.rows[0].id, caso: caso_asociado }, user);
+    await saveLog('crear_instalacion', { id: result.rows[0].id, caso: caso_asociado }, user);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -506,7 +515,7 @@ app.put('/api/instalaciones/:id', async (req, res) => {
        WHERE id = $10 RETURNING *`,
       [encargado, fecha, caso_asociado, tipo_instalacion, ambiente, usa_pipeline || false, usa_pipeline ? herramienta_pipeline : null, observaciones, estado || 'pendiente', req.params.id]
     );
-    await sendToLoki('editar_instalacion', { id: req.params.id, caso: caso_asociado }, user);
+    await saveLog('editar_instalacion', { id: req.params.id, caso: caso_asociado }, user);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -518,7 +527,7 @@ app.delete('/api/instalaciones/:id', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT caso_asociado FROM instalaciones WHERE id = $1', [req.params.id]);
     await pool.query('DELETE FROM instalaciones WHERE id = $1', [req.params.id]);
-    await sendToLoki('eliminar_instalacion', { id: req.params.id, caso: rows[0]?.caso_asociado }, user);
+    await saveLog('eliminar_instalacion', { id: req.params.id, caso: rows[0]?.caso_asociado }, user);
     res.json({ message: 'Eliminado correctamente' });
   } catch (err) {
     res.status(500).json({ error: err.message });
