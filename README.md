@@ -4,12 +4,13 @@ Sistema web para el control y seguimiento de instalaciones y despliegues de soft
 
 ## Características
 
-- **Autenticación**: Login con usuarios locales o de dominio LDAP (configurable)
+- **Autenticación**: Registro e inicio de sesión con usuarios locales o de dominio LDAP (configurable)
+- **Gestión de Usuarios**: Registro con nombre, apellido, correo electrónico y contraseña (hash bcrypt)
 - **Gestión de Estados**: Estados personalizables (Pendiente, En Curso, Finalizado, etc.)
 - **Caso Asociado**: Campo obligatorio con enlace directo a ServiceNow
 - **Logging**: Registro de todas las acciones en archivos JSON locales
 - **Filtros Avanzados**: Por mes, año, encargado, día, ambiente y estado
-- **Reportes**: Estadísticas mensuales y por encargado
+- **Reportes**: Estadísticas mensuales y por encargado con exportación a PDF
 
 ## Requisitos
 
@@ -89,10 +90,9 @@ LOGS_DIR=/logs
 
 ## Persistencia de Datos
 
-Los datos se persisten en:
-```
-/work/volumes/control-impl-oc-data      # PostgreSQL y Logs
-```
+Los datos se persisten en volúmenes Docker:
+- `postgres-data` - Datos de PostgreSQL
+- `logs/` - Archivos de log (mapeado a `./logs` en el host)
 
 ## Scripts npm
 
@@ -114,14 +114,17 @@ docker compose ps
 # Ver logs de la app
 docker compose logs -f app
 
-# Ver logs de la aplicación en el主机
-cat control-impl-oc-data/logs/logs-YYYY-MM-DD.jsonl
+# Ver logs de la aplicación en el host
+cat logs/logs-YYYY-MM-DD.jsonl
 
 # Acceder a PostgreSQL
 docker exec -it postgres-instalaciones psql -U admin -d instalaciones
 
 # Reiniciar servicios
 docker compose restart
+
+# Reconstruir y reiniciar
+docker compose up -d --build
 
 # Detener y eliminar
 docker compose down
@@ -133,6 +136,18 @@ docker compose up --build -d
 
 ## Estructura del Proyecto
 
+```
+├── public/           # Archivos estáticos (CSS, JS)
+├── views/            # Plantillas EJS
+│   ├── index.ejs     # Página principal
+│   ├── login.ejs     # Página de login
+│   └── register.ejs  # Página de registro
+├── server.js         # Servidor Node.js
+├── package.json      # Dependencias
+├── Dockerfile        # Imagen Docker
+├── docker-compose.yml # Orquestación
+├── .env              # Variables de entorno (no subir a git)
+└── .env.example      # Template de variables
 ```
 ├── public/           # Archivos estáticos (CSS, JS)
 ├── views/            # Plantillas EJS
@@ -154,7 +169,8 @@ docker compose up --build -d
 
 ### Tablas
 
-- `encargados` - Personas responsables de instalaciones
+- `usuarios` - Usuarios registrados (username, nombre, apellido, email, password hashed)
+- `encargados` - Personas responsables de instalaciones (vinculadas a usuarios)
 - `tipos_instalacion` - Tipos de instalaciones (API, servicio web, etc.)
 - `estados` - Estados de instalaciones
 - `session` - Almacenamiento de sesiones de usuarios (creada automáticamente)
@@ -173,6 +189,15 @@ docker compose up --build -d
 | finalizado | Finalizado | Verde |
 
 ## API Endpoints
+
+### Autenticación
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/login` | Página de login |
+| POST | `/login` | Iniciar sesión |
+| GET | `/register` | Página de registro |
+| POST | `/register` | Registrar nuevo usuario |
+| GET | `/logout` | Cerrar sesión |
 
 ### Encargados
 | Método | Endpoint | Descripción |
