@@ -12,7 +12,7 @@ services:
     volumes:
       - ./public:/app/public:ro
       - ./views:/app/views:ro
-      - ${VOL:-./}/control-impl-oc-data/logs:/logs
+      - logs-data:/logs
     restart: unless-stopped
     networks:
       - app-network
@@ -32,6 +32,10 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+
+volumes:
+  logs-data:
+
 networks:
   app-network:
     driver: bridge
