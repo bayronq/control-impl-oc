@@ -95,6 +95,8 @@ function setupEventListeners() {
 
   document.getElementById('btn-generar-reporte').addEventListener('click', generateReport);
 
+  document.getElementById('btn-export-pdf').addEventListener('click', exportReportPDF);
+
   document.getElementById('btn-nuevo-encargado').addEventListener('click', () => {
     openEncargadoModal();
   });
@@ -725,5 +727,76 @@ async function generateReport() {
     }
   } catch (error) {
     console.error('Error generando reporte:', error);
+  }
+}
+
+async function exportReportPDF() {
+  const mes = document.getElementById('reporte-mes').value;
+  const anio = document.getElementById('reporte-anio').value;
+
+  const meses = { '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril', '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto', '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre' };
+
+  try {
+    const [resumenRes, encargadosRes] = await Promise.all([
+      fetch(`/api/reportes/mensual?mes=${mes}&anio=${anio}`),
+      fetch(`/api/reportes/encargados?mes=${mes}&anio=${anio}`)
+    ]);
+
+    const resumen = await resumenRes.json();
+    const encargados = await encargadosRes.json();
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Instalaciones', 14, 22);
+
+    doc.setFontSize(12);
+    doc.text(`Periodo: ${meses[mes]} ${anio}`, 14, 32);
+
+    doc.setFontSize(14);
+    doc.text('Resumen del Mes', 14, 45);
+
+    doc.setFontSize(10);
+    const resumenData = [
+      ['Total Instalaciones', resumen.total_instalaciones || 0],
+      ['Producción', resumen.produccion || 0],
+      ['QA', resumen.qa || 0],
+      ['Con Pipeline', resumen.con_pipeline || 0],
+      ['Sin Pipeline', resumen.sin_pipeline || 0]
+    ];
+
+    doc.autoTable({
+      startY: 50,
+      head: [['Métrica', 'Cantidad']],
+      body: resumenData,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.setFontSize(14);
+    doc.text('Instalaciones por Encargado', 14, doc.lastAutoTable.finalY + 15);
+
+    if (encargados.length === 0) {
+      doc.setFontSize(10);
+      doc.text('Sin datos para este período', 14, doc.lastAutoTable.finalY + 25);
+    } else {
+      const encargadoData = encargados.map(e => [e.encargado, e.total_instalaciones, e.produccion || 0, e.qa || 0]);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Encargado', 'Total', 'Producción', 'QA']],
+        body: encargadoData,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+    }
+
+    doc.setFontSize(8);
+    doc.text(`Generado: ${new Date().toLocaleString('es-ES')}`, 14, 290);
+
+    doc.save(`reporte-instalaciones-${mes}-${anio}.pdf`);
+  } catch (error) {
+    console.error('Error exportando PDF:', error);
+    alert('Error al exportar PDF');
   }
 }
