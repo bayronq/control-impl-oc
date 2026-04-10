@@ -12,7 +12,7 @@ services:
     volumes:
       - ./public:/app/public:ro
       - ./views:/app/views:ro
-      - logs-data:/logs
+      - ./logs:/logs
     restart: unless-stopped
     networks:
       - app-network
@@ -34,7 +34,6 @@ services:
       - app-network
 
 volumes:
-  logs-data:
   postgres-data:
 
 networks:
