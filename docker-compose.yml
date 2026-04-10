@@ -23,7 +23,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ${VOL:-./}/control-impl-oc-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-instalaciones}"]
       interval: 5s
@@ -35,6 +35,7 @@ services:
 
 volumes:
   logs-data:
+  postgres-data:
 
 networks:
   app-network:

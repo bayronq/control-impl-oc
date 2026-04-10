@@ -19,6 +19,8 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
+RUN mkdir -p /logs && chmod 777 /logs
+
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
 USER nodejs
