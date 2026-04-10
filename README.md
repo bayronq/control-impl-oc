@@ -76,6 +76,9 @@ SERVICENOW_URL=https://urlmesadeservicio/ui/changes
 
 # Logging
 LOGS_DIR=/logs
+
+# Volúmenes (directorio base para persistencia)
+VOL=./
 ```
 
 ### Variables de LDAP
@@ -87,6 +90,13 @@ LOGS_DIR=/logs
 | LDAP_BASE_DN | DN base para búsquedas | `dc=dominio,dc=local` |
 | LDAP_BIND_DN | DN del usuario bind (opcional) | `cn=admin,dc=dominio,dc=local` |
 | LDAP_BIND_PASSWORD | Contraseña del usuario bind (opcional) | - |
+
+### Variables de Logging y Volúmenes
+
+| Variable | Descripción | Valor ejemplo |
+|----------|-------------|---------------|
+| LOGS_DIR | Directorio para archivos de log | `/logs` |
+| VOL | Directorio base para persistencia de datos | `./` |
 
 ## Persistencia de Datos
 
