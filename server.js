@@ -312,6 +312,8 @@ app.post('/login', async (req, res) => {
           userValid = true;
           userData = user;
         }
+      } else {
+        return res.render('login', { error: 'El usuario no existe' });
       }
     }
 
