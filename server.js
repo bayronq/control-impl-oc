@@ -21,7 +21,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
-const LOGS_DIR = process.env.LOGS_DIR || '/logs';
+const LOGS_DIR = process.env.LOG_DIR || '/logs';
 const ENABLE_DOMAIN_LOGIN = process.env.ENABLE_DOMAIN_LOGIN === 'true';
 const SERVICENOW_URL = process.env.SERVICENOW_URL || 'https://mesadeservicio.banrural.com.gt/ui/changes';
 const LDAP_URL = process.env.LDAP_URL || 'ldap://dc.gfbanrural.local:389';
@@ -666,6 +666,31 @@ app.get('/api/reportes/encargados', async (req, res) => {
     
     const { rows } = await pool.query(query, [mes.padStart(2, '0'), anio]);
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/logs', async (req, res) => {
+  try {
+    const logsDir = LOGS_DIR;
+    const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl')).sort().reverse();
+    const logs = [];
+    
+    for (const file of files.slice(0, 30)) {
+      const filePath = path.join(logsDir, file);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      for (const line of content.trim().split('\n')) {
+        if (line) {
+          try {
+            logs.push(JSON.parse(line));
+          } catch (e) {}
+        }
+      }
+    }
+    
+    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.json(logs.slice(0, 500));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -801,3 +801,103 @@ async function exportReportPDF() {
     alert('Error al exportar PDF');
   }
 }
+
+let auditFilters = { usuario: '', evento: '' };
+
+async function loadAuditLogs() {
+  try {
+    const response = await fetch('/api/logs');
+    let data = await response.json();
+
+    if (auditFilters.usuario) {
+      data = data.filter(l => l.user?.toLowerCase().includes(auditFilters.usuario.toLowerCase()));
+    }
+    if (auditFilters.evento) {
+      data = data.filter(l => l.action?.includes(auditFilters.evento));
+    }
+
+    renderAuditTable(data);
+  } catch (error) {
+    console.error('Error cargando logs:', error);
+  }
+}
+
+function renderAuditTable(data) {
+  const tbody = document.getElementById('tabla-audit');
+
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No hay logs registrados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(item => `
+    <tr>
+      <td>${formatDateTime(item.timestamp)}</td>
+      <td>${item.user || 'system'}</td>
+      <td>${formatAction(item.action)}</td>
+      <td><button class="btn btn-secondary" onclick='showAuditDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>Ver Detalle</button></td>
+    </tr>
+  `).join('');
+}
+
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleString('es-ES', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function formatAction(action) {
+  const actions = {
+    'login': 'Login',
+    'logout': 'Logout',
+    'registro_usuario': 'Registro',
+    'crear_encargado': 'Crear Encargado',
+    'editar_encargado': 'Editar Encargado',
+    'eliminar_encargado': 'Eliminar Encargado',
+    'crear_tipo': 'Crear Tipo',
+    'editar_tipo': 'Editar Tipo',
+    'eliminar_tipo': 'Eliminar Tipo',
+    'crear_estado': 'Crear Estado',
+    'editar_estado': 'Editar Estado',
+    'eliminar_estado': 'Eliminar Estado',
+    'crear_instalacion': 'Crear Instalación',
+    'editar_instalacion': 'Editar Instalación',
+    'eliminar_instalacion': 'Eliminar Instalación'
+  };
+  return actions[action] || action;
+}
+
+function showAuditDetail(log) {
+  document.getElementById('audit-detalle').textContent = JSON.stringify(log, null, 2);
+  document.getElementById('modal-audit').style.display = 'block';
+}
+
+document.getElementById('btn-filtrar-audit').addEventListener('click', () => {
+  auditFilters.usuario = document.getElementById('filter-usuario').value;
+  auditFilters.evento = document.getElementById('filter-evento').value;
+  loadAuditLogs();
+});
+
+document.getElementById('btn-todos-audit').addEventListener('click', () => {
+  auditFilters = { usuario: '', evento: '' };
+  document.getElementById('filter-usuario').value = '';
+  document.getElementById('filter-evento').value = '';
+  loadAuditLogs();
+});
+
+document.querySelector('.close-audit').addEventListener('click', () => {
+  document.getElementById('modal-audit').style.display = 'none';
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'audit' && document.getElementById('tabla-audit').children.length === 0) {
+      loadAuditLogs();
+    }
+  });
+});

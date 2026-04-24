@@ -22,6 +22,7 @@
       <button class="tab-btn" data-tab="encargados">Mantener Encargados</button>
       <button class="tab-btn" data-tab="tipos">Mantener Tipos</button>
       <button class="tab-btn" data-tab="estados">Mantener Estados</button>
+      <button class="tab-btn" data-tab="audit">Audit Log</button>
     </div>
 
     <div id="tab-instalaciones" class="tab-content active">
@@ -158,6 +159,42 @@
             </tr>
           </thead>
           <tbody id="tabla-estados"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-audit" class="tab-content">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Usuario:</label>
+          <input type="text" id="filter-usuario" placeholder="Buscar por usuario">
+        </div>
+        <div class="filter-group">
+          <label>Evento:</label>
+          <select id="filter-evento">
+            <option value="">Todos</option>
+            <option value="login">Login</option>
+            <option value="logout">Logout</option>
+            <option value="crear">Crear</option>
+            <option value="editar">Editar</option>
+            <option value="eliminar">Eliminar</option>
+          </select>
+        </div>
+        <button id="btn-filtrar-audit" class="btn btn-primary">Filtrar</button>
+        <button id="btn-todos-audit" class="btn btn-secondary">Ver Todos</button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Usuario</th>
+              <th>Evento</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-audit"></tbody>
         </table>
       </div>
     </div>
@@ -374,6 +411,14 @@
           <tbody id="reporte-encargados-body"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <div id="modal-audit" class="modal">
+    <div class="modal-content">
+      <span class="close-audit close">&times;</span>
+      <h2>Detalle del Log</h2>
+      <pre id="audit-detalle"></pre>
     </div>
   </div>
 

@@ -490,3 +490,66 @@ tbody tr:hover {
     padding: 10px 15px;
   }
 }
+
+#tab-audit .filters {
+  margin-bottom: 20px;
+}
+
+#tab-audit .filters .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#tab-audit .filters input,
+#tab-audit .filters select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+#tab-audit .filters input[type="text"] {
+  width: 200px;
+}
+
+#tab-audit .table-container {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+#tab-audit table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#tab-audit th,
+#tab-audit td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e1e5eb;
+}
+
+#tab-audit th {
+  background: #f8f9fa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+#tab-audit tbody tr:hover {
+  background: #f8f9fa;
+}
+
+#audit-detalle {
+  background: #f5f7fa;
+  padding: 15px;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow: auto;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
