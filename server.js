@@ -274,7 +274,7 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.render('login', { error: 'Usuario y contraseña son requeridos' });
+    return res.render('login', { error: 'Usuario y contraseña son requeridos', registered: false });
   }
 
   try {
@@ -306,14 +306,18 @@ app.post('/login', async (req, res) => {
       
       if (result.rows.length > 0) {
         const user = result.rows[0];
-        const passwordMatch = await bcrypt.compare(password, (await pool.query('SELECT password FROM usuarios WHERE id = $1', [user.id])).rows[0].password);
+        const pwResult = await pool.query('SELECT password FROM usuarios WHERE id = $1', [user.id]);
+        if (pwResult.rows.length === 0) {
+          return res.render('login', { error: 'El usuario no existe', registered: false });
+        }
+        const passwordMatch = await bcrypt.compare(password, pwResult.rows[0].password);
         
         if (passwordMatch) {
           userValid = true;
           userData = user;
         }
       } else {
-        return res.render('login', { error: 'El usuario no existe' });
+        return res.render('login', { error: 'El usuario no existe', registered: false });
       }
     }
 
@@ -327,10 +331,13 @@ app.post('/login', async (req, res) => {
     }
   } catch (err) {
     console.error('Error de autenticación:', err.message);
-    return res.render('login', { error: 'Credenciales inválidas' });
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND') {
+      return res.render('login', { error: 'Error de conexión. Intenta de nuevo.', registered: false });
+    }
+    return res.render('login', { error: 'Credenciales inválidas', registered: false });
   }
 
-  return res.render('login', { error: 'Credenciales inválidas' });
+  return res.render('login', { error: 'Credenciales inválidas', registered: false });
 });
 
 app.get('/logout', (req, res) => {
@@ -665,6 +672,15 @@ app.get('/api/reportes/encargados', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  const isApi = req.path.startsWith('/api');
+  if (isApi) {
+    return res.status(500).json({ error: err.message });
+  }
+  res.status(500).render('error', { error: err.message });
+});
 
 async function startServer() {
   try {
