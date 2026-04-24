@@ -835,7 +835,7 @@ function renderAuditTable(data) {
       <td>${formatDateTime(item.timestamp)}</td>
       <td>${item.user || 'system'}</td>
       <td>${formatAction(item.action)}</td>
-      <td><button class="btn btn-secondary" onclick='showAuditDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>Ver Detalle</button></td>
+      <td><button class="btn btn-secondary" onclick='showAuditDetail(${JSON.stringify(item).replace(/'/g, "&#39;")})'>Ver Evento</button></td>
     </tr>
   `).join('');
 }
